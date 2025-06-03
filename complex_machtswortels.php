@@ -34,15 +34,15 @@ function wortelOefening($seed = null) {
     }
     $wortels = [];
     for ($k = 0; $k < $n; $k++) {
-        $rk = round(pow($vraag_data['r'], 1/$n), 2);
-        $phik = round(($vraag_data['phi'] + 360*$k)/$n, 2);
+        $rk = round(pow($vraag_data['r'], 1/$n), 4); // meer precisie
+        $phik = round(fmod($vraag_data['phi'] + 360*$k, 360)/$n, 4);
         $wortels[] = [$rk, $phik];
     }
     $antwoord = "De oplossingen zijn:<br>";
     foreach ($wortels as $i => $w) {
         $antwoord .= "z<sub>{$i}</sub> = {$w[0]} (cos({$w[1]}°) + i sin({$w[1]}°))<br>";
     }
-    return [$vraag, $antwoord, $wortels];
+    return [$vraag, $antwoord, $wortels, $vraag_data['r']];
 }
 
 // Genereer 10 verschillende oefeningen met verschillende seeds
@@ -57,14 +57,14 @@ for ($i = 0; $i < 10; $i++) {
 <head>
     <meta charset="UTF-8">
     <title>Machtswortels trekken uit complexe getallen</title>
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/skeleton.css">
     <style>
-        body { font-family: Arial, sans-serif; background: #f7f7f7; }
-        .container { max-width: 700px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 24px; }
-        h2 { color: #2a5d9f; }
         .antwoord { color: #155724; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; padding: 12px; margin-top: 12px; }
         .plot { margin-top: 12px; text-align: center; }
         .refresh-btn { background: #2a5d9f; color: #fff; border: none; border-radius: 4px; padding: 8px 18px; font-size: 1em; cursor: pointer; margin: 18px 0 18px 0;}
         .refresh-btn:hover { background: #17406a; }
+        .label { font-size: 12px; fill: #222; }
         ol { margin-top: 20px; }
     </style>
 </head>
@@ -75,29 +75,13 @@ for ($i = 0; $i < 10; $i++) {
         <button class="refresh-btn" type="submit">Nieuwe oefeningen &#x21bb;</button>
     </form>
     <ol>
-    <?php foreach ($oefeningen as $oef): list($vraag, $antwoord, $wortels) = $oef; ?>
+    <?php foreach ($oefeningen as $oef): list($vraag, $antwoord, $wortels, $modulus) = $oef; ?>
         <li style="margin-bottom:32px;">
             <div><?= $vraag ?></div>
             <details>
                 <summary>Toon antwoord</summary>
                 <div class="antwoord"><?= $antwoord ?></div>
-                <div class="plot">
-                    <svg width="260" height="260" viewBox="-130 -130 260 260">
-                        <circle cx="0" cy="0" r="120" fill="none" stroke="#ccc"/>
-                        <line x1="-120" y1="0" x2="120" y2="0" stroke="#aaa"/>
-                        <line x1="0" y1="-120" x2="0" y2="120" stroke="#aaa"/>
-                        <?php foreach ($wortels as $w): 
-                            $r = 100 * $w[0];
-                            $phi = deg2rad($w[1]);
-                            $x = round($r * cos($phi), 1);
-                            $y = round(-$r * sin($phi), 1); // SVG y-axis inverted
-                        ?>
-                        <circle cx="<?= $x ?>" cy="<?= $y ?>" r="7" fill="red" stroke="black"/>
-                        <?php endforeach; ?>
-                        <circle cx="0" cy="0" r="100" fill="none" stroke="#2a5d9f" stroke-width="2"/>
-                    </svg>
-                    <div style="font-size:small;">De wortels zijn in het complexe vlak getekend (rood) op de eenheidscirkel.</div>
-                </div>
+                
             </details>
         </li>
     <?php endforeach; ?>

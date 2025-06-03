@@ -19,7 +19,7 @@ function oefeningVermenigvuldigen($seed = null) {
         . "z₁ = " . complexToString($r1, $phi1) . "<br>"
         . "z₂ = " . complexToString($r2, $phi2);
     $r = $r1 * $r2;
-    $phi = ($phi1 + $phi2) % 360;
+    $phi = fmod($phi1 + $phi2 + 360, 360);
     $antwoord = "z₁·z₂ = {$r} (cos({$phi}°) + i sin({$phi}°))";
     $punten = [
         ['r' => $r1, 'phi' => $phi1, 'kleur' => '#2a5d9f', 'label' => 'z₁'],
@@ -37,7 +37,7 @@ function oefeningDelen($seed = null) {
         . "z₁ = " . complexToString($r1, $phi1) . "<br>"
         . "z₂ = " . complexToString($r2, $phi2);
     $r = round($r1 / $r2, 2);
-    $phi = ($phi1 - $phi2 + 360) % 360;
+    $phi = fmod($phi1 - $phi2 + 360, 360);
     $antwoord = "z₁/z₂ = {$r} (cos({$phi}°) + i sin({$phi}°))";
     $punten = [
         ['r' => $r1, 'phi' => $phi1, 'kleur' => '#2a5d9f', 'label' => 'z₁'],
@@ -54,7 +54,7 @@ function oefeningMacht($seed = null) {
     $vraag = "Bereken de {$n}-de macht van:<br>"
         . "z = " . complexToString($r, $phi);
     $rM = pow($r, $n);
-    $phiM = ($n * $phi) % 360;
+    $phiM = fmod($n * $phi, 360);
     $antwoord = "z^{$n} = {$rM} (cos({$phiM}°) + i sin({$phiM}°))";
     $punten = [
         ['r' => $r, 'phi' => $phi, 'kleur' => '#2a5d9f', 'label' => 'z'],
@@ -82,16 +82,15 @@ for ($i = 0; $i < 10; $i++) {
 <head>
     <meta charset="UTF-8">
     <title>Bewerkingen met gon. vorm van complexe getallen</title>
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/skeleton.css">
     <style>
-        body { font-family: Arial, sans-serif; background: #f7f7f7; }
-        .container { max-width: 700px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 24px; }
-        h2 { color: #2a5d9f; }
         .antwoord { color: #155724; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; padding: 12px; margin-top: 12px; }
         .plot { margin-top: 12px; text-align: center; }
         .refresh-btn { background: #2a5d9f; color: #fff; border: none; border-radius: 4px; padding: 8px 18px; font-size: 1em; cursor: pointer; margin: 18px 0 18px 0;}
         .refresh-btn:hover { background: #17406a; }
-        ol { margin-top: 20px; }
         .label { font-size: 12px; fill: #222; }
+        ol { margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -108,23 +107,33 @@ for ($i = 0; $i < 10; $i++) {
                 <summary>Toon antwoord</summary>
                 <div class="antwoord"><?= $antwoord ?></div>
                 <div class="plot">
-                    <svg width="260" height="260" viewBox="-130 -130 260 260">
-                        <circle cx="0" cy="0" r="120" fill="none" stroke="#ccc"/>
-                        <line x1="-120" y1="0" x2="120" y2="0" stroke="#aaa"/>
-                        <line x1="0" y1="-120" x2="0" y2="120" stroke="#aaa"/>
-                        <?php foreach ($punten as $pt): 
-                            $r = 100 * min($pt['r'], 1.2);
+                    <svg width="240" height="240" viewBox="-120 -120 240 240" style="max-width:100%;">
+                        <!-- <circle cx="0" cy="0" r="110" fill="none" stroke="#ccc"/> -->
+                        <line x1="-110" y1="0" x2="110" y2="0" stroke="#aaa"/>
+                        <line x1="0" y1="-110" x2="0" y2="110" stroke="#aaa"/>
+                        <?php foreach ($punten as $pt):
+                            // Altijd pijlen tot op de cirkelrand (radius 100)
+                            $maxR = 100;
                             $phi = deg2rad($pt['phi']);
-                            $x = round($r * cos($phi), 1);
-                            $y = round(-$r * sin($phi), 1); // SVG y-axis inverted
+                            $x = round($maxR * cos($phi), 1);
+                            $y = round(-$maxR * sin($phi), 1); // SVG y-axis inverted
+                            $lx = max(-110, min(110, $x + 8));
+                            $ly = max(-110, min(110, $y));
+                            $isAntwoord = ($pt['kleur'] === 'red');
+                            $kleurCirkel = $isAntwoord ? 'red' : '#2a5d9f';
                         ?>
-                        <line x1="0" y1="0" x2="<?= $x ?>" y2="<?= $y ?>" stroke="<?= $pt['kleur'] ?>" stroke-width="2"/>
-                        <circle cx="<?= $x ?>" cy="<?= $y ?>" r="7" fill="<?= $pt['kleur'] ?>" stroke="black"/>
-                        <text x="<?= $x+8 ?>" y="<?= $y ?>" class="label"><?= $pt['label'] ?></text>
+                        <line x1="0" y1="0" x2="<?= $x ?>" y2="<?= $y ?>" stroke="<?= $kleurCirkel ?>" stroke-width="2" marker-end="url(#arrow)"/>
+                        <circle cx="<?= $x ?>" cy="<?= $y ?>" r="7" fill="<?= $kleurCirkel ?>" stroke="black"/>
+                        <text x="<?= $lx ?>" y="<?= $ly ?>" class="label"><?= $pt['label'] ?></text>
                         <?php endforeach; ?>
                         <circle cx="0" cy="0" r="100" fill="none" stroke="#2a5d9f" stroke-width="2"/>
+                        <defs>
+                            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="#444"/>
+                            </marker>
+                        </defs>
                     </svg>
-                    <div style="font-size:small;">Het rode punt is het antwoord, blauw zijn de gegeven getallen (op de eenheidscirkel).</div>
+                    <div style="font-size:small;">Het rode punt is het antwoord, blauw zijn de gegeven getallen (richting = argument, altijd tot op de cirkel).</div>
                 </div>
             </details>
         </li>
